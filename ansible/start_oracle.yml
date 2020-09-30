@@ -1,0 +1,23 @@
+---
+  - name: Prepare oracle
+    hosts: all
+    become: yes
+    vars_files:
+      - ./vars.yml
+
+
+    tasks:
+      - name: Start service docker, if not started
+        service:
+          name: docker
+          state: started
+
+      - name: Start Oracle container {{ container_id }} 
+        command: docker start {{ container_id }} 
+
+      - name: Start sshd servie in oracle container {{ container_id }}
+        command: docker exec -it {{ container_id }} bash -c '/usr/sbin/sshd'
+      
+
+
+      

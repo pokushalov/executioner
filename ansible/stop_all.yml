@@ -1,0 +1,23 @@
+---
+  - name: Prepare oracle
+    hosts: all
+    become: yes
+    vars_files:
+      - ./vars.yml
+
+
+    tasks:
+      - name: Stop Oracle container {{ container_id }}
+        command: docker stop {{ container_id }} 
+
+
+      - name: Stop service docker, if started
+        service:
+          name: docker
+          state: stopped
+
+      - name: Halt system
+        command: systemctl halt
+
+
+      

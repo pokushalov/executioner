@@ -1,0 +1,7 @@
+prod:
+  srv1:
+test:
+  test1:
+oracle:
+  manjaro_oracle:
+    port: 2223
