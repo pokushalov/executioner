@@ -1,6 +1,8 @@
 from typing import List, Any
 from typing import NamedTuple
 import uuid
+import local_config
+
 
 try:
     from loguru import logger
@@ -134,24 +136,30 @@ class Executioner:
                     # check if current command should have values from previous command
                     parameters_needed = re.findall(parameter_pattern, current_command)
                     if parameters_needed:
-                        logger.debug("We need parameter to be replaced.")
+                        logger.debug(f"We need parameter to be replaced. f{parameters_needed}")
                         logger.debug(f"PRE-command: {current_command}")
                         for parameter_position, item in enumerate(parameters_needed):
+                            logger.debug(f"Checking parameter [item]: {item}")
                             if server.hostname not in results:
                                 raise Exception(
                                     "EXECUTIONER EXCEPTION: Sorry, results from previous comman is not available YET. "
                                     "Please fix your code.")
                             # let's replace regexp in command with values from previous run
                             previous_results = results[server.hostname][idx_command-1][1]
+                            logger.debug(f"Previous results: {previous_results}")
                             item_tpl = item.split("_")
-                            new_command = new_command.replace(f"{self.regexp_pre_str}{item}{self.regexp_post_str}", previous_results[int(item_tpl[1])])
-                        logger.debug(f"POST-command: {current_command}")
+                            logger.debug(f"Current set [V]: [{item_tpl}]")
+                            src_substr = f"{self.regexp_pre_str}{item}{self.regexp_post_str}"
+                            logger.debug(f"Source value: {src_substr}")
+                            new_command = new_command.replace(src_substr, previous_results[int(item_tpl[1])])
+                        logger.debug(f"POST-command: {new_command}")
+                        logger.debug("\n")
 
 
                     ccon = self.d_allitems[server.hostname]
                     # res = ccon.before
-                    logger.debug(f"[{server.hostname}] Executing [{current_command}], command #{idx_command}")
-                    ccon.sendline(current_command)
+                    logger.debug(f"[{server.hostname}] Executing [{new_command}], command #{idx_command}")
+                    ccon.sendline(new_command)
                     ccon.expect(self.CMDLINE)
                     res = ccon.before.decode('ascii').split("\r\n")
                     del res[0]
@@ -300,7 +308,7 @@ class Executioner:
                 logger.debug(f"Connecting to [{chost_info.hostname}:{chost_info.port}].")
 
                 self.d_allitems[chost_info.hostname] = pexpect.spawn(
-                    f"ssh -l oracle -p {chost_info.port} {chost_info.hostname}", timeout=10, maxread=10000000000,
+                    f"ssh  {local_config.additional_ssh_parameters} -l oracle -p {chost_info.port} {chost_info.hostname}", timeout=10, maxread=10000000000,
                     searchwindowsize=20000000)
                 self.d_allitems[chost_info.hostname].setwinsize(64000, 64000)
                 logger.debug(f"Setting prompt on {chost_info}")
