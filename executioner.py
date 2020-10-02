@@ -125,12 +125,14 @@ class Executioner:
         results = {}
 
         if command is not None and len(self.hosts) > 0:
-            logger.debug(f"Current Hosts: f{self.hosts}")
+            logger.debug(f"Current Hosts: {self.hosts}")
             for idx_command, current_command in enumerate(command):
+                logger.info(f"Running next command: [{idx_command+1}]: [{current_command}]")
                 for server in self.hosts:
+                    new_command = current_command
+                    logger.debug(f"Current server: {server.hostname}")
                     # check if current command should have values from previous command
                     parameters_needed = re.findall(parameter_pattern, current_command)
-
                     if parameters_needed:
                         logger.debug("We need parameter to be replaced.")
                         logger.debug(f"PRE-command: {current_command}")
@@ -142,22 +144,15 @@ class Executioner:
                             # let's replace regexp in command with values from previous run
                             previous_results = results[server.hostname][idx_command-1][1]
                             item_tpl = item.split("_")
-                            # logger.debug(f"PRE-command: {current_command}")
-                            # logger.debug(f"Current item: {item}")
-                            #logger.debug(item_tpl)
-                            #logger.debug(f"{self.regexp_pre}{item}{self.regexp_post}")
-                            current_command = current_command.replace(f"{self.regexp_pre_str}{item}{self.regexp_post_str}", previous_results[int(item_tpl[1])])
+                            new_command = new_command.replace(f"{self.regexp_pre_str}{item}{self.regexp_post_str}", previous_results[int(item_tpl[1])])
                         logger.debug(f"POST-command: {current_command}")
 
 
                     ccon = self.d_allitems[server.hostname]
                     # res = ccon.before
-                    logger.debug(f"[{server.hostname}] Executing [{current_command}, command #{idx_command}]")
+                    logger.debug(f"[{server.hostname}] Executing [{current_command}], command #{idx_command}")
                     ccon.sendline(current_command)
                     ccon.expect(self.CMDLINE)
-                    ccon.sendline(current_command)
-                    ccon.expect(self.CMDLINE)
-
                     res = ccon.before.decode('ascii').split("\r\n")
                     del res[0]
                     del res[-1]
